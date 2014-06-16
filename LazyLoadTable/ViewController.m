@@ -9,7 +9,7 @@
 #import "ViewController.h"
 #import "TableViewCell.h"
 
-const NSUInteger kTableSizeIncrement = 20;
+static const NSUInteger kTableSizeIncrement = 20;
 
 @interface ViewController () <UITableViewDataSource, UITableViewDelegate>
 
@@ -26,7 +26,7 @@ const NSUInteger kTableSizeIncrement = 20;
 - (void)viewDidLoad
 {
     [super viewDidLoad];
-    self.tableData = [NSMutableArray arrayWithCapacity:20];
+    self.tableData = [NSMutableArray arrayWithCapacity:kTableSizeIncrement];
     for (NSUInteger i = 0; i < kTableSizeIncrement; i++) {
         [self.tableData addObject:self.tableElementPlaceholder];
     }
@@ -67,10 +67,6 @@ const NSUInteger kTableSizeIncrement = 20;
     }
     
     TableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"TableViewCell" forIndexPath:indexPath];
-    
-    if (cell == nil) {
-        cell = [[TableViewCell alloc] init];
-    }
     
     NSString* text = [self.tableData objectAtIndex:indexPath.row];
     if (text.length == 0) {
