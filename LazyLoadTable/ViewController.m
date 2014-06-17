@@ -16,8 +16,10 @@ static const NSUInteger kTableSizeIncrement = 20;
 @property (nonatomic, strong) NSMutableArray* tableData;
 @property (weak, nonatomic) IBOutlet UITableView *tableView;
 @property (nonatomic, readonly) id tableElementPlaceholder;
+@property (nonatomic, strong) NSTimer* tableDataLoadDelayTimer;
 
 - (void)fetchTableCellDataForIndexPath:(NSIndexPath*)indexPath;
+- (void)tableDataLoadDelayTimerFired:(NSTimer*)timer;
 
 @end
 
@@ -40,6 +42,20 @@ static const NSUInteger kTableSizeIncrement = 20;
 
 - (void)fetchTableCellDataForIndexPath:(NSIndexPath*)indexPath
 {
+    if (self.tableDataLoadDelayTimer != nil) {
+        [self.tableDataLoadDelayTimer invalidate];
+    }
+    self.tableDataLoadDelayTimer = [NSTimer scheduledTimerWithTimeInterval:0.1
+                                                                    target:self
+                                                                  selector:@selector(tableDataLoadDelayTimerFired:)
+                                                                  userInfo:nil
+                                                                   repeats:NO];
+}
+
+- (void)tableDataLoadDelayTimerFired:(NSTimer*)timer
+{
+    [self.tableDataLoadDelayTimer invalidate];
+    self.tableDataLoadDelayTimer = nil;
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0), ^{
         sleep(2);
         dispatch_async(dispatch_get_main_queue(), ^{
