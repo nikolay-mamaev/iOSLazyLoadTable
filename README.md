@@ -17,4 +17,4 @@ In this example, time-consuming and thread-blocking data loading operation is em
   `[NSThread sleepForTimeInterval:0.2];  // emulation of time-consuming and thread-blocking operation`
 * Tune implementation of the `tableView:cellForRowAtIndexPath:` method for your cells implementation. 
 
-Please note that any object data needed in the loading code should be thread-safe since loading is performed in non-main thread (i.e. `atomic` properties and probably `NSLock` should be used inside the `tableDataLoadDelayTimerFired:` method in your time-consuming thread blocking code replacing the `sleep()` call).
+Please note that any object data needed in the loading code should be thread-safe since loading is performed in non-main thread (i.e. *`atomic`* properties and probably `NSLock` should be used inside the `performActualFetchTableCellDataForIndexPaths:` method in your time-consuming thread blocking code replacing the `[NSThread sleepForTimeInterval:0.2]` call).
