@@ -19,6 +19,7 @@ static const NSUInteger kTableSizeIncrement = 20;
 @property (nonatomic, strong) NSTimer* tableDataLoadDelayTimer;
 
 - (void)fetchTableCellDataForIndexPath:(NSIndexPath*)indexPath;
+- (void)performActualFetchTableCellDataForIndexPaths:(NSArray*)indexPaths;
 - (void)tableDataLoadDelayTimerFired:(NSTimer*)timer;
 
 @end
@@ -42,16 +43,20 @@ static const NSUInteger kTableSizeIncrement = 20;
 
 - (void)fetchTableCellDataForIndexPath:(NSIndexPath*)indexPath
 {
-    if (self.tableDataLoadDelayTimer != nil) {
-        [self.tableDataLoadDelayTimer invalidate];
+    if (self.tableView.decelerating && !self.tableView.tracking) {
+        if (self.tableDataLoadDelayTimer != nil) {
+            [self.tableDataLoadDelayTimer invalidate];
+        }
+        
+        self.tableDataLoadDelayTimer =
+            [NSTimer scheduledTimerWithTimeInterval:0.1
+                                             target:self
+                                           selector:@selector(tableDataLoadDelayTimerFired:)
+                                           userInfo:nil
+                                            repeats:NO];
+    } else {
+        [self performActualFetchTableCellDataForIndexPaths:@[indexPath]];
     }
-    
-    self.tableDataLoadDelayTimer =
-        [NSTimer scheduledTimerWithTimeInterval:0.1
-                                         target:self
-                                       selector:@selector(tableDataLoadDelayTimerFired:)
-                                       userInfo:nil
-                                        repeats:NO];
 }
 
 - (void)tableDataLoadDelayTimerFired:(NSTimer*)timer
@@ -59,19 +64,24 @@ static const NSUInteger kTableSizeIncrement = 20;
     [self.tableDataLoadDelayTimer invalidate];
     self.tableDataLoadDelayTimer = nil;
     
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0), ^{
-        NSArray* indexPathsForVisibleRows = [self.tableView indexPathsForVisibleRows];
-        // Replace 'sleep()' with your time-consuming cell data loading
-        sleep(2);
-        dispatch_async(dispatch_get_main_queue(), ^{
-            for (NSIndexPath* indexPath in indexPathsForVisibleRows) {
-                [self.tableData setObject:[NSString stringWithFormat:@"Text at cell #%d", indexPath.row]
-                       atIndexedSubscript:indexPath.row];
-            }
-            [self.tableView reloadRowsAtIndexPaths:indexPathsForVisibleRows
-                                  withRowAnimation:UITableViewRowAnimationAutomatic];
+    NSArray* indexPathsForVisibleRows = [self.tableView indexPathsForVisibleRows];
+    [self performActualFetchTableCellDataForIndexPaths:indexPathsForVisibleRows];
+}
+
+- (void)performActualFetchTableCellDataForIndexPaths:(NSArray*)indexPaths
+{
+    for (NSIndexPath* indexPath in indexPaths) {
+        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0), ^{
+            [NSThread sleepForTimeInterval:0.2];  // emulation of time-consuming and thread-blocking operation
+            NSString* value = [NSString stringWithFormat:@"Text at cell #%ld", (long)indexPath.row];
+
+            dispatch_async(dispatch_get_main_queue(), ^{
+                self.tableData[indexPath.row] = value;
+                [self.tableView reloadRowsAtIndexPaths:@[indexPath]
+                                      withRowAnimation:UITableViewRowAnimationAutomatic];
+            });
         });
-    });
+    }
 }
 
 #pragma mark UITableViewDataSource protocol
